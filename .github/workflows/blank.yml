@@ -1,20 +1,24 @@
-name: Publish on GitHub, CurseForge & Modrinth    
- 
-on: [ pull_request, workflow_dispatch ]           
+name: Build and Publish to GitHub Releases
 
-env:                                              
-  MINECRAFT_VERSION: 1.20.1
-  JAVA_VERSION: 17      
-  VERSION: 0.0
-  RELEASE_NAME: Anythink Mod 0.0 for Minecraft 1.20.1
+on:
+  [pull_request, workflow_dispatch]
+
+env:
+  MINECRAFT_VERSION: 1.19.2
+  JAVA_VERSION: 17
+  VERSION: 1.1.0+1.19.2
+  RELEASE_NAME: Example Mod 1.1.0 for Minecraft 1.19.2
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure this is added to repository secrets
 
 permissions:
   contents: write
+  packages: write
+  deployments: write
 
-jobs:                                             
-  build:                                          
-    runs-on: ubuntu-latest                        
-    steps:                                        
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
       - name: Check Environment Variables
         run: env
 
@@ -35,3 +39,18 @@ jobs:
 
       - name: Build
         run: ./gradlew clean build
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v3
+        with:
+          name: mod-jar
+          path: build/libs/*.jar
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download JAR
+        uses: actions/download-artifact@v3
+        with:
+          name: mod-jar
