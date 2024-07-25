@@ -54,3 +54,11 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: mod-jar
+
+      - name: Publish to GitHub Releases
+        if: github.event_name == 'workflow_dispatch'  # Only run this step for manual triggers
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/libs/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
