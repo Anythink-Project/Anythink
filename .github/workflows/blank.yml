@@ -1,19 +1,14 @@
-name: Build and Publish to GitHub Releases
+name: Build and Commit JAR
 
 on:
-  [pull_request, workflow_dispatch]
+  [push, pull_request, workflow_dispatch]
 
 env:
-  MINECRAFT_VERSION: 1.19.2
+  MINECRAFT_VERSION: 1.20.1
   JAVA_VERSION: 17
-  VERSION: 1.1.0+1.19.2
-  RELEASE_NAME: Example Mod 1.1.0 for Minecraft 1.19.2
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure this is added to repository secrets
-
-permissions:
-  contents: write
-  packages: write
-  deployments: write
+  VERSION: 0.0+1.20.1
+  JAR_DIRECTORY: mod-jars  # Directory in the repo to store the JAR file
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN.TOKEN }}  # Reference the secret within the GITHUB_TOKEN environment
 
 jobs:
   build:
@@ -40,25 +35,18 @@ jobs:
       - name: Build
         run: ./gradlew clean build
 
-      - name: Upload JAR
-        uses: actions/upload-artifact@v3
-        with:
-          name: mod-jar
-          path: build/libs/*.jar
+      - name: Create JAR Directory
+        run: mkdir -p ${{ env.JAR_DIRECTORY }}
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download JAR
-        uses: actions/download-artifact@v3
-        with:
-          name: mod-jar
+      - name: Move JAR to Repository Directory
+        run: mv build/libs/*.jar ${{ env.JAR_DIRECTORY }}/
 
-      - name: Publish to GitHub Releases
-        if: github.event_name == 'workflow_dispatch'  # Only run this step for manual triggers
-        uses: softprops/action-gh-release@v1
+      - name: Commit and Push JAR
+        uses: EndBug/add-and-commit@v9
         with:
-          files: build/libs/*.jar
+          author_name: GitHub Actions
+          author_email: actions@github.com
+          message: "Add mod JAR file ${{ env.VERSION }}"
+          add: ${{ env.JAR_DIRECTORY }}/
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN.TOKEN }}  # Use the secret here
